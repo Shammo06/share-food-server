@@ -27,6 +27,7 @@ async function run() {
     await client.connect();
 
     const foodCollection = client.db('FoodDB').collection('food');
+    const requestCollection = client.db('RequestDB').collection('food');
 
     app.get('/food', async (req, res) => {
         let nameQuery = {};
@@ -36,11 +37,7 @@ async function run() {
         }
         if (req.query?.date) {
             sortQuery = { date: parseInt(req.query.date) }; 
-        }    
-
-        console.log(req.query.date)     
-        console.log(req.query.foodName)
-        
+        }                 
         const result = await foodCollection.find(nameQuery).sort(sortQuery).toArray();
         res.send(result);
     });
@@ -51,6 +48,20 @@ async function run() {
         const result = await foodCollection.findOne(query);
         res.send(result);
       })
+
+    app.post('/requestfood', async (req, res) => {
+        const requestFood = req.body;
+        const result = await requestCollection.insertOne(requestFood);
+        res.send(result);
+    })
+    app.get('/requestfood', async (req, res) => {
+        let emailQuery = {};      
+        if (req.query?.reqEmail) {           
+            emailQuery = { reqEmail : req.query.reqEmail }; 
+        }
+       const result = await requestCollection.find(emailQuery).sort({date:1}).toArray();
+        res.send(result);
+    });
     
 
 
@@ -64,7 +75,6 @@ async function run() {
   }
 }
 run().catch(console.dir);
-
 
 app.get('/', (req,res) =>{
     res.send('server is running')
