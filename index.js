@@ -35,12 +35,17 @@ async function run() {
         if (req.query?.foodName) {           
             nameQuery = { foodName : req.query.foodName }; 
         }
+        if (req.query?.donarEmail) {           
+            nameQuery = { donarEmail : req.query.donarEmail }; 
+        }
         if (req.query?.date) {
             sortQuery = { date: parseInt(req.query.date) }; 
         }                 
         const result = await foodCollection.find(nameQuery).sort(sortQuery).toArray();
         res.send(result);
-    });
+    }); 
+
+   
 
     app.get('/food/:id', async (req, res) => {
         const id = req.params.id;
@@ -54,6 +59,12 @@ async function run() {
         const result = await requestCollection.insertOne(requestFood);
         res.send(result);
     })
+    app.get('/requestfood/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await requestCollection.findOne(query);
+      res.send(result);
+    })
     app.get('/requestfood', async (req, res) => {
         let emailQuery = {};      
         if (req.query?.reqEmail) {           
@@ -62,6 +73,14 @@ async function run() {
        const result = await requestCollection.find(emailQuery).sort({date:1}).toArray();
         res.send(result);
     });
+
+    app.delete('/food/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await foodCollection.deleteOne(query);
+        res.send(result);
+    })
+
     
 
 
