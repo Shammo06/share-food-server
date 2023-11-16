@@ -44,15 +44,18 @@ async function run() {
         const result = await foodCollection.find(nameQuery).sort(sortQuery).toArray();
         res.send(result);
     }); 
-
-   
-
     app.get('/food/:id', async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) }
         const result = await foodCollection.findOne(query);
         res.send(result);
       })
+
+    app.post('/food', async (req, res) => {
+      const food = req.body;
+      const result = await foodCollection.insertOne(food);
+      res.send(result);
+    })
 
     app.post('/requestfood', async (req, res) => {
         const requestFood = req.body;
