@@ -101,6 +101,12 @@ async function run() {
     })
 
     //request food
+    app.delete('/requestfood/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await requestCollection.deleteOne(query);
+      res.send(result);
+    })
     app.post('/requestfood', async (req, res) => {
         const requestFood = req.body;
         const result = await requestCollection.insertOne(requestFood);
@@ -112,8 +118,13 @@ async function run() {
       const result = await requestCollection.findOne(query);
       res.send(result);
     })
-    app.get('/requestfood', async (req, res) => {
-        let emailQuery = {};      
+    app.get('/requestfood',verifyToken, async (req, res) => {
+        
+        let emailQuery = {};
+
+        if (req.user?.email !== req.query.reqEmail) {
+          return res.status(403).send({ message: 'forbidden access' })
+        }       
         if (req.query?.reqEmail) {           
             emailQuery = { reqEmail : req.query.reqEmail }; 
         }
