@@ -99,6 +99,19 @@ async function run() {
       const result = await foodCollection.deleteOne(query);
       res.send(result);
     })
+    app.patch('/food/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedStatus = req.body;
+      const updateDoc = {
+          $set: {
+              status: updatedStatus.status
+          },
+      };
+      const result = await foodCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
 
     //request food
     app.delete('/requestfood/:id', async (req, res) => {
@@ -112,25 +125,32 @@ async function run() {
         const result = await requestCollection.insertOne(requestFood);
         res.send(result);
     })
-    app.get('/requestfood/:id', async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) }
-      const result = await requestCollection.findOne(query);
-      res.send(result);
-    })
-    app.get('/requestfood',verifyToken, async (req, res) => {
-        
-        let emailQuery = {};
-
+   
+    app.get('/requestfood', verifyToken, async (req, res) => {        
+        let query = {};
         if (req.user?.email !== req.query.reqEmail) {
           return res.status(403).send({ message: 'forbidden access' })
         }       
         if (req.query?.reqEmail) {           
-            emailQuery = { reqEmail : req.query.reqEmail }; 
+            query = { reqEmail : req.query.reqEmail }; 
         }
-        const result = await requestCollection.find(emailQuery).sort({date:1}).toArray();
+        const result = await requestCollection.find(query).sort({date:1}).toArray();
         res.send(result);
     });
+
+    app.patch('/requestfood/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedStatus = req.body;
+      const updateDoc = {
+          $set: {
+              status: updatedStatus.status
+          },
+      };
+      const result = await requestCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
 
     
     //webtoken
