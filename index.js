@@ -8,7 +8,10 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173',
+  'https://food-share-b48b5.web.app', 
+  'https://food-share-b48b5.firebaseapp.com'
+],
   credentials: true
 }));
 app.use(express.json());
@@ -18,6 +21,7 @@ app.use(cookieParser());
 const verifyToken = (req, res, next) => {
    
   if(req.query.date){
+    
     next();
   } 
   else{
@@ -31,6 +35,7 @@ const verifyToken = (req, res, next) => {
             return res.status(401).send({ message: 'unauthorized access' })
         }
         req.user = decoded;
+        
         next();
     })
   }
@@ -52,7 +57,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const foodCollection = client.db('FoodDB').collection('food');
     const requestCollection = client.db('RequestDB').collection('food');
@@ -61,9 +66,10 @@ async function run() {
     app.get('/food',verifyToken, async (req, res) => {
         let nameQuery = {};
         let sortQuery = {date:1};
-        if(req.query.date){             
+        if(req.query.date){ 
+                    
           if (req.query?.foodName) {           
-              nameQuery = { foodName : req.query.foodName }; 
+              nameQuery = { foodName : req.query.foodName, status: 'Available' }; 
           }
          
           if (req.query?.date) {
@@ -72,11 +78,12 @@ async function run() {
         }
         
         else{
+          
           if (req.user?.email !== req.query.donorEmail) {
             return res.status(403).send({ message: 'forbidden access' })
           }        
           if (req.query?.donorEmail) {
-              query = { donorEmail: req.query.email }
+              nameQuery = { donorEmail: req.query.donorEmail }
           }
         }              
         const result = await foodCollection.find(nameQuery).sort(sortQuery).toArray();
@@ -128,13 +135,23 @@ async function run() {
    
     app.get('/requestfood', verifyToken, async (req, res) => {        
         let query = {};
-        if (req.user?.email !== req.query.reqEmail) {
-          return res.status(403).send({ message: 'forbidden access' })
-        }       
-        if (req.query?.reqEmail) {           
-            query = { reqEmail : req.query.reqEmail }; 
+        if (req.query.donation) {           
+          if (req.user?.email !== req.query.donation) {
+            return res.status(403).send({ message: 'forbidden access' })
+          }       
+          if (req.query?.reqEmail) {           
+              query = { donation : req.query.donation }; 
+          }
         }
-        const result = await requestCollection.find(query).sort({date:1}).toArray();
+        else{
+          if (req.user?.email !== req.query.reqEmail) {
+            return res.status(403).send({ message: 'forbidden access' })
+          }       
+          if (req.query?.reqEmail) {           
+              query = { reqEmail : req.query.reqEmail }; 
+          }
+        }
+        const result = await requestCollection.find(query).sort({reqDate:1}).toArray();
         res.send(result);
     });
 
@@ -160,8 +177,10 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET , {expiresIn: '1h'});
         res.cookie('token', token, {
                 httpOnly: true,
-                secure: false,
-                sameSite: 'strict'
+                // secure: false,
+                // sameSite: 'strict'
+                secure: process.env.NODE_ENV === 'production', 
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             })
                 .send(token);
     })
